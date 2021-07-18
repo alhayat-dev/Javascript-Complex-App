@@ -5,8 +5,10 @@ exports.logout = function(req, res){
 
 exports.login = function(req, res){
     let user = new User(req.body)
-    user.login(function(result){
+    user.login().then(function(result){
       res.send(result)
+    }).catch(function(error){
+      res.send(error)
     })
 }
 
