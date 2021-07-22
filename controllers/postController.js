@@ -8,10 +8,13 @@ exports.viewCreateScreen = function(req, res){
 exports.create = function(req, res){
  let post = new Post(req.body, req.session.user._id)
 
- post.create().then(function(){
-    res.send("Post created")
- }).catch(function(errors){
-    res.send(errors)
+ post.create().then(function(newId){
+    res.flash("success", "New post created successfully.")
+    req.session.save(()=> {
+       res.redirect(`/post/${newId}`)
+    })
+ }).catch(() => {
+   res.redirect('/create-post')
  })   
 
 }
@@ -29,7 +32,14 @@ exports.viewSingle = async function(req, res){
 exports.viewEditScreen = async function(req, res){
    try {
       let post = await Post.findSingleById(req.params.id)
-      res.render("edit-post", { post: post })
+      if (post.authorId == req.visitorId) {
+         res.render("edit-post", { post: post })
+      } else {
+         req.flash("errors", "You do not have permissions to edit this post")
+         req.session.save(() => {
+            res.redirect('/')
+         })
+      }
    } catch {
       res.render("404")
    }
@@ -54,7 +64,7 @@ exports.edit = function(req, res) {
         res.redirect(`/post/${req.params.id}/edit`)
       })
     }
-  }).catch(() => {
+  }).catch((errors) => {
     // a post with the requested id doesn't exist
     // or if the current visitor is not the owner of the requested post
     req.flash("errors", "You do not have permission to perform that action.")
