@@ -2,10 +2,11 @@ const postsCollection = require('../db').db().collection("post")
 const ObjectID = require('mongodb').ObjectID
 const User = require('./User')
 
-let Post = function(data, userId){
+let Post = function(data, userId, requestedPostId){
     this.data   = data
     this.errors = []
     this.userId = userId
+    this.requestedPostId = requestedPostId
 }
 
 Post.prototype.cleanUp = function(){
@@ -44,6 +45,38 @@ Post.prototype.create = function(){
     }
   })
 }
+
+Post.prototype.update = function() {
+    return new Promise(async (resolve, reject) => {
+      try {
+        
+        let post = await Post.findSingleById(this.requestedPostId, this.userid)
+        if (!post.isVisitorOwner) {
+          // actually update the db
+          let status = await this.actuallyUpdate()
+          resolve(status)
+        } else {
+          reject()
+        }
+      } catch {
+        reject()
+      }
+    })
+  }
+  
+  Post.prototype.actuallyUpdate = function() {
+    return new Promise(async (resolve, reject) => {
+      this.cleanUp()
+      this.validate()
+      if (!this.errors.length) {
+        await postsCollection.findOneAndUpdate({_id: new ObjectID(this.requestedPostId)}, {$set: {title: this.data.title, body: this.data.body}})
+        resolve("success")
+      } else {
+        reject("failure")
+      }
+    })
+  }
+
 
 Post.reusablePostQuery = function(uniqueOperations, visitorId){
     return new Promise(async function(resolve, reject) {
