@@ -1,3 +1,5 @@
+import axios from "axios"
+
 export default class Search {
   // 1. Select DOM elements, and keep track of any useful data
   constructor() {
@@ -46,7 +48,12 @@ export default class Search {
   }
 
   sendRequest() {
-    alert("m duadasd")
+    axios
+      .post("/search", { searchTerm: this.inputField.value })
+      .then(() => {})
+      .catch(() => {
+        alert("request failed")
+      })
   }
 
   showLoaderIcon() {
